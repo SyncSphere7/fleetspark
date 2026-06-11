@@ -153,7 +153,7 @@ When a rider wants to buy a bike on credit:
 
 ### 3.3 Payment Tracking
 - **Mobile Money auto-matching** via Flutterwave/MTN/Airtel APIs
-- Weekly payment schedule auto-generated
+- Weekly payment schedule automatically generated
 - Payment history ledger per rider
 - Automatic SMS receipt after each payment
 - Payment reminders (SMS 1 day before due date)
@@ -332,7 +332,7 @@ When a rider wants to buy a bike on credit:
 | Savings behavior | 10% | Money moved to savings accounts |
 
 #### Proof of Income Certificate
-Auto-generated PDF containing:
+automatically generated PDF containing:
 - Rider name, NIN, phone number
 - Mobile money provider (MTN/Airtel)
 - Statement period (e.g., last 6 months)
@@ -426,7 +426,7 @@ Rider wants a bike loan
 
 ### Phase 1: Core Fleet (Weeks 1-4) — UNCHANGED
 - Vehicle registry, GPS tracking, battery monitoring, trips, maintenance, alerts, dashboard
-- Target: Kiira Motors pilot (24 buses)
+- Target: 2-3 fleet operators pilot (Q3 2026)
 
 ### Phase 2: Financing Module (Weeks 5-8) — NEW
 - Loan products, loan origination, payment tracking (MoMo via Flutterwave)

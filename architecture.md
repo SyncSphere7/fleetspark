@@ -540,4 +540,4 @@ Coolify:
 - Mobile responsive fixes
 - Bug fixes, performance optimization
 - Deploy to production
-- Kiira Motors pilot onboarding
+- Ugandan EV manufacturers pilot onboarding

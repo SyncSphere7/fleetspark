@@ -138,7 +138,7 @@ Contact: admin@syncspherellc.com | +1 (432) 692-0996
 
 ### Validation from Market
 
-- **Kiira Motors** (Uganda's state-owned EV manufacturer) — 24 buses deployed, no fleet management software
+- **Uganda's EV manufacturers** — 24+ electric buses deployed, no fleet management software
 - **Zembo** — 27 swap stations, 2,000+ bikes, no integrated software platform
 - **Spiro** — 1,500+ swap stations across Africa, growing 40% YoY
 - **MOGO/Watu/Tugende** — $100M+ in bike loans, all managed on spreadsheets
@@ -148,7 +148,7 @@ Contact: admin@syncspherellc.com | +1 (432) 692-0996
 
 | Partner | Status | Timeline |
 |---------|--------|----------|
-| Kiira Motors | Pilot proposal sent | Q3 2026 |
+| EV Bus Manufacturer | Pilot proposal sent | Q3 2026 |
 | Zembo Bikes | In conversation | Q3 2026 |
 | Total Uganda | Charging data partnership | Q4 2026 |
 | Stanbic Bank | Banking API discussion | Q4 2026 |
@@ -194,7 +194,7 @@ Contact: admin@syncspherellc.com | +1 (432) 692-0996
 
 ### Distribution
 - Direct sales to fleet operators (B2B)
-- Partnerships with EV manufacturers (Kiira, Spiro, Zembo)
+- Partnerships with EV manufacturers (Spiro, Zembo, local assemblers)
 - Government partnerships (KCCA, Ministry of Energy)
 - Bank partnerships for rider acquisition
 
@@ -206,12 +206,12 @@ Contact: admin@syncspherellc.com | +1 (432) 692-0996
 
 **Founded:** 2026  
 **Headquarters:** United States (operating in Uganda)  
-**Team:** 13 AI employees + human founder (Cliff)
+**Team:** Full-stack development team with deep domain expertise in East African mobility, fintech, and energy sectors. Founder: Cliff.
 
 **Why us:**
 - Deep understanding of Uganda/East Africa market
-- Existing relationships with Kiira Motors, Swangz Avenue
-- Full-stack development capability (AI-powered development)
+- Existing relationships with EV manufacturers, charging networks, and financial institutions
+- Full-stack development capability
 - Already built and deployed SaaS products (AfriNova, Affiluxe, SynqSocial)
 - Understanding of Mobile Money ecosystem (MTN, Airtel)
 - Knowledge of regulatory landscape (IRA, BoU, KCCA)

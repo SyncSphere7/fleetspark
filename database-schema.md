@@ -710,7 +710,7 @@ GROUP BY bucket, vehicle_id;
 // Demo Organization
 const org = await prisma.organization.create({
   data: {
-    name: 'Kiira Motors Demo',
+    name: 'Ugandan EV manufacturers Demo',
     slug: 'kiira-demo',
     plan: 'ENTERPRISE',
     settings: {
@@ -735,11 +735,11 @@ const admin = await prisma.user.create({
 
 // Demo Vehicles (5 buses)
 const vehicles = await Promise.all([
-  { name: 'Kayoola-001', plate: 'UAX 123A', model: 'Kayoola EVS', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
-  { name: 'Kayoola-002', plate: 'UAX 124A', model: 'Kayoola EVS', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
-  { name: 'Kayoola-003', plate: 'UAX 125A', model: 'Kayoola EVS', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
-  { name: 'Kayoola-004', plate: 'UAX 126A', model: 'Kayoola EVS', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
-  { name: 'Kayoola-005', plate: 'UAX 127A', model: 'Kayoola EVS', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
+  { name: 'ElectricBus-001', plate: 'UAX 123A', model: 'electric buses', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
+  { name: 'ElectricBus-001', plate: 'UAX 124A', model: 'electric buses', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
+  { name: 'ElectricBus-001', plate: 'UAX 125A', model: 'electric buses', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
+  { name: 'ElectricBus-001', plate: 'UAX 126A', model: 'electric buses', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
+  { name: 'ElectricBus-001', plate: 'UAX 127A', model: 'electric buses', type: 'BUS', batteryCapacity: 250, maxRangeKm: 300 },
 ].map(v => prisma.vehicle.create({
   data: { ...v, orgId: org.id, year: 2025, status: 'IDLE', odometerKm: 0 },
 })));

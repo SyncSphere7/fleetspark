@@ -16,7 +16,7 @@ Register a new organization + admin user.
 **Request:**
 ```json
 {
-  "orgName": "Kiira Motors",
+  "orgName": "Ugandan EV manufacturers",
   "orgSlug": "kiira-motors",
   "userName": "Fleet Admin",
   "email": "admin@kiiramotors.com",
@@ -104,9 +104,9 @@ List all vehicles for the organization.
   "data": [
     {
       "id": "uuid",
-      "name": "Kayoola-001",
+      "name": "ElectricBus-001",
       "plateNumber": "UAX 123A",
-      "model": "Kayoola EVS",
+      "model": "electric buses",
       "type": "BUS",
       "status": "IN_TRANSIT",
       "batteryLevel": 72,
@@ -132,10 +132,10 @@ Create a new vehicle. **Roles:** ADMIN, FLEET_MANAGER
 **Request:**
 ```json
 {
-  "name": "Kayoola-025",
+  "name": "ElectricBus-001",
   "plateNumber": "UAX 147A",
   "vin": "KIIRA202500147",
-  "model": "Kayoola EVS",
+  "model": "electric buses",
   "year": 2025,
   "type": "BUS",
   "batteryCapacity": 250,
@@ -154,10 +154,10 @@ Create a new vehicle. **Roles:** ADMIN, FLEET_MANAGER
 ```json
 {
   "id": "uuid",
-  "name": "Kayoola-001",
+  "name": "ElectricBus-001",
   "plateNumber": "UAX 123A",
   "vin": "KIIRA202500123",
-  "model": "Kayoola EVS",
+  "model": "electric buses",
   "year": 2025,
   "type": "BUS",
   "status": "IN_TRANSIT",
@@ -322,9 +322,9 @@ Unassign driver from vehicle.
       "id": "uuid",
       "type": "LOW_BATTERY",
       "severity": "WARNING",
-      "message": "Kayoola-003 battery level at 18%",
+      "message": "ElectricBus-001 battery level at 18%",
       "vehicleId": "uuid",
-      "vehicleName": "Kayoola-003",
+      "vehicleName": "ElectricBus-001",
       "data": { "batteryLevelPct": 18 },
       "isAcknowledged": false,
       "createdAt": "2026-06-11T12:00:00Z"
@@ -404,7 +404,7 @@ Get upcoming maintenance (next 7 days).
     {
       "id": "uuid",
       "vehicleId": "uuid",
-      "vehicleName": "Kayoola-001",
+      "vehicleName": "ElectricBus-001",
       "driverName": "John Kato",
       "startTime": "2026-06-11T08:00:00Z",
       "endTime": "2026-06-11T09:30:00Z",
@@ -453,7 +453,7 @@ Full trip detail with route points.
   "vehicles": [
     {
       "id": "uuid",
-      "name": "Kayoola-001",
+      "name": "ElectricBus-001",
       "distanceKm": 2100,
       "trips": 85,
       "utilizationPct": 82,
@@ -503,7 +503,7 @@ Deactivate user.
 ### PUT /api/v1/settings/organization
 ```json
 {
-  "name": "Kiira Motors Corporation",
+  "name": "Ugandan EV manufacturers Corporation",
   "address": "Jinja Industrial Park, Jinja, Uganda",
   "phone": "+256414000000",
   "settings": {

@@ -14,12 +14,12 @@ FleetSpark is an **Electric Vehicle Fleet Management Platform** built for Africa
 
 ### Why does it exist?
 - Uganda has a National E-Mobility Strategy mandating full public transport electrification by 2030
-- Kiira Motors is manufacturing electric buses with no management software
+- Ugandan EV manufacturers is manufacturing electric buses with no management software
 - Existing global solutions (Optibus, Fleetio, Geotab) are too expensive and not built for African infrastructure (Mobile Money, intermittent connectivity, local compliance)
 - No local player owns this category yet
 
 ### Who is it for?
-- **Primary:** Electric bus fleet operators (Kiira Motors, Tondeka Metro, KCCA)
+- **Primary:** Electric bus fleet operators (Ugandan EV manufacturers, Tondeka Metro, KCCA)
 - **Secondary:** Government agencies transitioning fleets to EV
 - **Tertiary:** Logistics companies, charging station operators, inter-city coach operators
 - **Expansion:** Rwanda, Kenya, Tanzania (Year 2+)
@@ -28,7 +28,7 @@ FleetSpark is an **Electric Vehicle Fleet Management Platform** built for Africa
 
 ## 2. MVP Scope (Phase 1 — First 6 Weeks)
 
-The MVP must be **deployable to Kiira Motors' 24-bus fleet** as a pilot. It needs to solve their top 3 problems:
+The MVP must be **deployable to Ugandan EV manufacturers' 24-bus fleet** as a pilot. It needs to solve their top 3 problems:
 1. "Where are our buses and what are they doing right now?"
 2. "How healthy are our batteries and when do they need service?"
 3. "What's our cost savings vs diesel buses?"
@@ -333,9 +333,9 @@ Devices send telemetry via HTTP POST to `/api/v1/telemetry`.
 
 ## 9. Open Questions
 
-1. **GPS hardware:** Does Kiira Motors already have telematics devices installed on their buses? If yes, what brand/model?
+1. **GPS hardware:** Does Ugandan EV manufacturers already have telematics devices installed on their buses? If yes, what brand/model?
 2. **Data ownership:** Government requirement — must data be hosted in Uganda or is EC2 acceptable for pilot?
-3. **Kiira contact:** Who is the right person at Kiira Motors to pitch the pilot?
+3. **Kiira contact:** Who is the right person at Ugandan EV manufacturers to pitch the pilot?
 4. **Uganda driving license format:** For driver management validation
 5. **Kiira bus specs:** Battery capacity (kWh), range (km), charging type (CCS/CHAdeMO/wired) for accurate calculations
 
