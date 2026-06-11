@@ -1,0 +1,719 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ORGANIZATION ─────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  plan      Plan     @default(FREE)
+  logoUrl   String?
+  address   String?
+  phone     String?
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users           User[]
+  drivers         Driver[]
+  vehicles        Vehicle[]
+  alerts          Alert[]
+  alertSettings   AlertSetting[]
+  telemetryKeys   TelemetryKey[]
+  loanProducts    LoanProduct[]
+  loans           Loan[]
+  insurancePartners InsurancePartner[]
+  policies        Policy[]
+  bankPartners    BankPartner[]
+  incomeCertificates IncomeCertificate[]
+
+  @@map("organizations")
+}
+
+enum Plan {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+// ─── USER ─────────────────────────────────────────────────────
+
+model User {
+  id            String       @id @default(uuid())
+  orgId         String       @map("org_id")
+  email         String       @unique
+  passwordHash  String       @map("password_hash")
+  role          UserRole     @default(VIEWER")
+  name          String
+  phone         String?
+  isActive      Boolean      @default(true) @map("is_active")
+  lastLogin     DateTime?    @map("last_login")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  acknowledgedAlerts Alert[] @relation("AlertAcknowledger")
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  FLEET_MANAGER
+  DRIVER
+  VIEWER
+}
+
+// ─── DRIVER / RIDER ───────────────────────────────────────────
+
+model Driver {
+  id             String       @id @default(uuid())
+  orgId          String       @map("org_id")
+  name           String
+  phone          String
+  email          String?
+  licenseNumber  String?      @map("license_number")
+  licenseExpiry  DateTime?    @map("license_expiry")
+  nin            String?      // National ID Number
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  organization   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  vehicles       Vehicle[]
+  trips          Trip[]
+  loans          Loan[]
+  wallet         RiderWallet?
+  incomeVerifications IncomeVerification[]
+
+  @@unique([orgId, phone])
+  @@map("drivers")
+}
+
+// ─── VEHICLE ──────────────────────────────────────────────────
+
+model Vehicle {
+  id               String       @id @default(uuid())
+  orgId            String       @map("org_id")
+  driverId         String?      @map("driver_id")
+  name             String
+  plateNumber      String       @map("plate_number")
+  vin              String?      @unique
+  model            String
+  year             Int
+  type             VehicleType  @default(BUS)
+  status           VehicleStatus @default(IDLE)
+  batteryCapacity  Float?       @map("battery_capacity")
+  maxRangeKm       Int?         @map("max_range_km")
+  odometerKm       Float        @default(0) @map("odometer_km")
+  depot            String?
+  deviceId         String?      @map("device_id")
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  organization     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  driver           Driver?      @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  locations        Location[]
+  batteryLogs      BatteryLog[]
+  chargingSessions ChargingSession[]
+  trips            Trip[]
+  maintenance      Maintenance[]
+  alerts           Alert[]
+  loan             Loan?
+  policies         Policy[]
+
+  @@unique([orgId, plateNumber])
+  @@index([orgId, status])
+  @@map("vehicles")
+}
+
+enum VehicleType {
+  BUS
+  BIKE
+  CAR
+  VAN
+  TRUCK
+  COACH
+}
+
+enum VehicleStatus {
+  IN_TRANSIT
+  CHARGING
+  IDLE
+  MAINTENANCE
+  OFFLINE
+}
+
+// ─── LOCATION (Time-series) ───────────────────────────────────
+
+model Location {
+  time            DateTime     @map("time")
+  vehicleId       String       @map("vehicle_id")
+  lat             Float
+  lng             Float
+  speedKmh        Float?       @map("speed_kmh")
+  heading         Float?
+  altitudeM       Float?       @map("altitude_m")
+  ignition        Boolean      @default(false)
+  odometerKm      Float?       @map("odometer_km")
+  batteryLevelPct Int?         @map("battery_level_pct")
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, time(sort: Desc)])
+  @@map("locations")
+}
+
+// ─── BATTERY LOG (Time-series) ────────────────────────────────
+
+model BatteryLog {
+  time            DateTime     @map("time")
+  vehicleId       String       @map("vehicle_id")
+  levelPct        Int          @map("level_pct")
+  sohPct          Int?         @map("soh_pct")
+  voltageV        Float?       @map("voltage_v")
+  temperatureC    Float?       @map("temperature_c")
+  charging        Boolean      @default(false)
+  currentA        Float?       @map("current_a")
+  estimatedRangeKm Int?        @map("estimated_range_km")
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, time(sort: Desc)])
+  @@map("battery_logs")
+}
+
+// ─── CHARGING SESSION ─────────────────────────────────────────
+
+model ChargingSession {
+  id              String       @id @default(uuid())
+  vehicleId       String       @map("vehicle_id")
+  startTime       DateTime     @map("start_time")
+  endTime         DateTime?    @map("end_time")
+  startLevelPct   Int          @map("start_level_pct")
+  endLevelPct     Int?         @map("end_level_pct")
+  energyKwh       Float?       @map("energy_kwh")
+  chargerId       String?      @map("charger_id")
+  costUgx         Int?         @map("cost_ugx")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, startTime(sort: Desc)])
+  @@map("charging_sessions")
+}
+
+// ─── TRIP ─────────────────────────────────────────────────────
+
+model Trip {
+  id            String       @id @default(uuid())
+  vehicleId     String       @map("vehicle_id")
+  driverId      String?      @map("driver_id")
+  startTime     DateTime     @map("start_time")
+  endTime       DateTime?    @map("end_time")
+  startLat      Float?       @map("start_lat")
+  startLng      Float?       @map("start_lng")
+  endLat        Float?       @map("end_lat")
+  endLng        Float?       @map("end_lng")
+  distanceKm    Float?       @map("distance_km")
+  avgSpeedKmh   Float?       @map("avg_speed_kmh")
+  maxSpeedKmh   Float?       @map("max_speed_kmh")
+  durationMin   Int?         @map("duration_min")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver   Driver?  @relation(fields: [driverId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId, startTime(sort: Desc)])
+  @@map("trips")
+}
+
+// ─── MAINTENANCE ──────────────────────────────────────────────
+
+model Maintenance {
+  id              String              @id @default(uuid())
+  vehicleId       String              @map("vehicle_id")
+  type            MaintenanceType
+  description     String?
+  status          MaintenanceStatus   @default(SCHEDULED)
+  scheduledDate   DateTime            @map("scheduled_date")
+  completedDate   DateTime?           @map("completed_date")
+  odometerKm      Float?              @map("odometer_km")
+  costUgx         Int?                @map("cost_ugx")
+  notes           String?
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, status])
+  @@index([scheduledDate])
+  @@map("maintenance")
+}
+
+enum MaintenanceType {
+  ROUTINE
+  REPAIR
+  INSPECTION
+  BATTERY_SERVICE
+  TIRE
+  BRAKE
+  OTHER
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+// ─── ALERT ────────────────────────────────────────────────────
+
+model Alert {
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")
+  vehicleId       String       @map("vehicle_id")
+  type            AlertType
+  severity        AlertSeverity @default(WARNING)
+  message         String
+  data            Json?
+  isAcknowledged  Boolean      @default(false) @map("is_acknowledged")
+  acknowledgedBy  String?      @map("acknowledged_by")
+  acknowledgedAt  DateTime?    @map("acknowledged_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  acknowledger  User?        @relation("AlertAcknowledger", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt(sort: Desc)])
+  @@index([vehicleId, createdAt(sort: Desc)])
+  @@index([isAcknowledged])
+  @@map("alerts")
+}
+
+enum AlertType {
+  LOW_BATTERY
+  OFFLINE
+  MAINTENANCE_DUE
+  GEOFENCE_EXIT
+  HIGH_TEMPERATURE
+  RAPID_BATTERY_DROP
+  CHARGING_COMPLETED
+  VEHICLE_IDLE_TOO_LONG
+  PAYMENT_OVERDUE
+  INSURANCE_EXPIRING
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// ─── ALERT SETTINGS ───────────────────────────────────────────
+
+model AlertSetting {
+  id            String       @id @default(uuid())
+  orgId         String       @map("org_id")
+  alertType     AlertType    @map("alert_type")
+  threshold     Json?
+  enabled       Boolean      @default(true)
+  notifyEmail   Boolean      @default(true) @map("notify_email")
+  notifySms     Boolean      @default(false) @map("notify_sms")
+  notifyInApp   Boolean      @default(true) @map("notify_in_app")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, alertType])
+  @@map("alert_settings")
+}
+
+// ─── TELEMETRY KEYS ───────────────────────────────────────────
+
+model TelemetryKey {
+  id            String       @id @default(uuid())
+  orgId         String       @map("org_id")
+  name          String
+  apiKeyHash    String       @map("api_key_hash")
+  isActive      Boolean      @default(true) @map("is_active")
+  lastUsedAt    DateTime?    @map("last_used_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  organization  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("telemetry_keys")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//                    FINANCING MODULE
+// ═══════════════════════════════════════════════════════════════
+
+model LoanProduct {
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")
+  name            String
+  vehicleType     VehicleType  @map("vehicle_type")
+  bikePriceUgx    Int          @map("bike_price_ugx")
+  minDepositUgx   Int          @map("min_deposit_ugx")
+  interestRatePct Float        @map("interest_rate_pct")
+  termWeeks       Int          @map("term_weeks")
+  weeklyPaymentUgx Int         @map("weekly_payment_ugx")
+  totalCostUgx    Int          @map("total_cost_ugx")
+  isActive        Boolean      @default(true) @map("is_active")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  loans           Loan[]
+
+  @@map("loan_products")
+}
+
+model Loan {
+  id                String       @id @default(uuid())
+  orgId             String       @map("org_id")
+  loanProductId     String       @map("loan_product_id")
+  riderId           String       @map("rider_id")
+  vehicleId         String       @unique @map("vehicle_id")
+  guarantorName     String?      @map("guarantor_name")
+  guarantorPhone    String?      @map("guarantor_phone")
+  guarantorNin      String?      @map("guarantor_nin")
+  guarantorRelation String?      @map("guarantor_relation")
+
+  bikePriceUgx      Int          @map("bike_price_ugx")
+  depositUgx        Int          @map("deposit_ugx")
+  amountFinancedUgx Int          @map("amount_financed_ugx")
+  interestRatePct   Float        @map("interest_rate_pct")
+  termWeeks         Int          @map("term_weeks")
+  weeklyPaymentUgx  Int          @map("weekly_payment_ugx")
+  totalRepayableUgx Int          @map("total_repayable_ugx")
+
+  status            LoanStatus   @default(ACTIVE)
+  startDate         DateTime     @map("start_date")
+  expectedEndDate   DateTime     @map("expected_end_date")
+  actualEndDate     DateTime?    @map("actual_end_date")
+
+  totalPaidUgx      Int          @default(0) @map("total_paid_ugx")
+  totalInterestUgx  Int          @default(0) @map("total_interest_ugx")
+  totalFeesUgx      Int          @default(0) @map("total_fees_ugx")
+  arrearsUgx        Int          @default(0) @map("arrears_ugx")
+  remainingBalance  Int          @map("remaining_balance")
+
+  weeksOverdue      Int          @default(0) @map("weeks_overdue")
+  lastPaymentDate   DateTime?    @map("last_payment_date")
+  nextPaymentDue    DateTime     @map("next_payment_due")
+  defaultDate       DateTime?    @map("default_date")
+  repossessedAt     DateTime?    @map("repossessed_at")
+
+  gpsImmobilized    Boolean      @default(false) @map("gps_immobilized")
+  gpsImmobilizedAt  DateTime?    @map("gps_immobilized_at")
+
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  organization      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  loanProduct       LoanProduct  @relation(fields: [loanProductId], references: [id])
+  rider             Driver       @relation(fields: [riderId], references: [id])
+  vehicle           Vehicle      @relation(fields: [vehicleId], references: [id])
+  payments          Payment[]
+  defaulterActions  DefaulterAction[]
+
+  @@index([orgId, status])
+  @@index([riderId])
+  @@index([nextPaymentDue])
+  @@map("loans")
+}
+
+enum LoanStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  DEFAULTED
+  REPOSSESSED
+  WRITTEN_OFF
+  RESTRUCTURED
+}
+
+model Payment {
+  id              String       @id @default(uuid())
+  loanId          String       @map("loan_id")
+  amountUgx       Int          @map("amount_ugx")
+  paymentMethod   PaymentMethod @map("payment_method")
+  transactionId   String?      @map("transaction_id")
+  weekNumber      Int          @map("week_number")
+  dueDate         DateTime     @map("due_date")
+  paidAt          DateTime     @map("paid_at")
+  status          PaymentStatus @default(COMPLETED)
+  channel         String?
+  notes           String?
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  loan            Loan         @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId, weekNumber])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  MOBILE_MONEY
+  CASH
+  BANK_TRANSFER
+  GUARANTOR_PAYMENT
+  DEDUCTION
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model DefaulterAction {
+  id              String       @id @default(uuid())
+  loanId          String       @map("loan_id")
+  actionType      DefaulterActionType @map("action_type")
+  daysOverdue     Int          @map("days_overdue")
+  message         String?
+  sentTo          String?
+  sentBy          String       @map("sent_by")
+  response        String?
+  actionDate      DateTime     @default(now()) @map("action_date")
+
+  loan            Loan         @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId, actionDate])
+  @@map("defaulter_actions")
+}
+
+enum DefaulterActionType {
+  SMS_REMINDER
+  SMS_WARNING
+  PHONE_CALL
+  GRACE_OFFER
+  FINAL_NOTICE
+  GPS_LOCK
+  GPS_UNLOCK
+  REPOSSESSION_ORDER
+  REPOSSESSION_COMPLETE
+  GUARANTOR_NOTICE
+  PAYMENT_RECEIVED
+  RESCHEDULE_OFFER
+  RESCHEDULE_APPROVED
+}
+
+model RiderWallet {
+  id              String       @id @default(uuid())
+  riderId         String       @unique @map("rider_id")
+  loanId          String       @map("loan_id")
+  balanceUgx      Int          @default(0) @map("balance_ugx")
+  totalEarnedUgx  Int          @default(0) @map("total_earned_ugx")
+  totalPaidUgx    Int          @default(0) @map("total_paid_ugx")
+  lastActivityAt  DateTime?    @map("last_activity_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  rider           Driver       @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  loan            Loan         @relation(fields: [loanId], references: [id])
+  transactions    WalletTransaction[]
+
+  @@map("rider_wallets")
+}
+
+model WalletTransaction {
+  id              String       @id @default(uuid())
+  walletId        String       @map("wallet_id")
+  amountUgx       Int          @map("amount_ugx")
+  type            WalletTransactionType
+  description     String?
+  reference       String?
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  wallet          RiderWallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+  @@map("wallet_transactions")
+}
+
+enum WalletTransactionType {
+  EARNING
+  LOAN_DEDUCTION
+  BONUS
+  PENALTY
+  WITHDRAWAL
+  ADJUSTMENT
+}
+
+// ═══════════════════════════════════════════════════════════════
+//                    INSURANCE MODULE
+// ═══════════════════════════════════════════════════════════════
+
+model InsurancePartner {
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")
+  name            String
+  contactPhone    String?      @map("contact_phone")
+  contactEmail    String?      @map("contact_email")
+  apiEndpoint     String?      @map("api_endpoint")
+  logoUrl         String?      @map("logo_url")
+  isActive        Boolean      @default(true) @map("is_active")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  policies        Policy[]
+
+  @@map("insurance_partners")
+}
+
+model Policy {
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")
+  partnerId       String       @map("partner_id")
+  vehicleId       String       @map("vehicle_id")
+  loanId          String?      @map("loan_id")
+
+  coverageType    CoverageType @map("coverage_type")
+  policyNumber    String       @map("policy_number")
+  premiumUgx      Int          @map("premium_ugx")
+  startDate       DateTime     @map("start_date")
+  endDate         DateTime     @map("end_date")
+  status          PolicyStatus @default(ACTIVE)
+  documentUrl     String?      @map("document_url")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  partner         InsurancePartner @relation(fields: [partnerId], references: [id])
+  vehicle         Vehicle      @relation(fields: [vehicleId], references: [id])
+  loan            Loan?        @relation(fields: [loanId], references: [id])
+  claims          Claim[]
+
+  @@index([orgId, status])
+  @@index([vehicleId])
+  @@map("policies")
+}
+
+enum CoverageType {
+  THIRD_PARTY
+  THIRD_PARTY_FIRE_THEFT
+  COMPREHENSIVE
+  PERSONAL_ACCIDENT
+}
+
+enum PolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  CLAIMED
+}
+
+model Claim {
+  id              String       @id @default(uuid())
+  policyId        String       @map("policy_id")
+  incidentDate    DateTime     @map("incident_date")
+  description     String
+  amountClaimedUgx Int         @map("amount_claimed_ugx")
+  status          ClaimStatus  @map("status")
+  resolution      String?
+  amountPaidUgx   Int?         @map("amount_paid_ugx")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  policy          Policy       @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@map("claims")
+}
+
+enum ClaimStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PAID
+}
+
+// ═══════════════════════════════════════════════════════════════
+//                    BANKING MODULE
+// ═══════════════════════════════════════════════════════════════
+
+model BankPartner {
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")
+  name            String
+  contactEmail    String?      @map("contact_email")
+  apiEndpoint     String?      @map("api_endpoint")
+  isActive        Boolean      @default(true) @map("is_active")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  incomeCertificates IncomeCertificate[]
+
+  @@map("bank_partners")
+}
+
+model MobileMoneyStatement {
+  id              String       @id @default(uuid())
+  riderId         String       @map("rider_id")
+  provider        String       // "MTN" or "AIRTEL"
+  phoneNumber     String       @map("phone_number")
+  statementPeriod String       @map("statement_period")
+  rawData         Json?        @map("raw_data")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  rider           Driver       @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  verifications   IncomeVerification[]
+
+  @@map("mobile_money_statements")
+}
+
+model IncomeVerification {
+  id              String       @id @default(uuid())
+  riderId         String       @map("rider_id")
+  statementId     String       @map("statement_id")
+  avgDailyIncomeUgx Int        @map("avg_daily_income_ugx")
+  incomeScore     Int          @map("income_score") // 0-100
+  consistencyPct  Float?       @map("consistency_pct")
+  trend           String?      // "increasing", "stable", "decreasing"
+  totalInflowsUgx Int?         @map("total_inflows_ugx")
+  totalOutflowsUgx Int?        @map("total_outflows_ugx")
+  activeDays      Int?         @map("active_days")
+  totalDays       Int?         @map("total_days")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  rider           Driver       @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  statement       MobileMoneyStatement @relation(fields: [statementId], references: [id])
+  certificates    IncomeCertificate[]
+
+  @@map("income_verifications")
+}
+
+model IncomeCertificate {
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")
+  verificationId  String       @map("verification_id")
+  riderId         String       @map("rider_id")
+  bankPartnerId   String?      @map("bank_partner_id")
+  certificateUrl  String?      @map("certificate_url")
+  incomeScore     Int          @map("income_score")
+  avgDailyIncomeUgx Int        @map("avg_daily_income_ugx")
+  validUntil      DateTime     @map("valid_until")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  verification    IncomeVerification @relation(fields: [verificationId], references: [id])
+  rider           Driver       @relation(fields: [riderId], references: [id])
+  bankPartner     BankPartner? @relation(fields: [bankPartnerId], references: [id])
+
+  @@map("income_certificates")
+}
