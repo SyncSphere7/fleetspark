@@ -171,7 +171,7 @@ async function main() {
   console.log('  Manager:  manager@kiiramotors.com  / demo123');
   console.log('  Viewer:   viewer@kiiramotors.com   / demo123');
   console.log('');
-  console.log('Organization: Zembo Bikes (Bike Fleet + Financing)');
+  console.log('Organization: Zembo Bikes (Bike Fleet + Financing + Charging)');
   console.log('  Admin:    admin@zembo.ug            / demo123');
   console.log('  Manager:  manager@zembo.ug          / demo123');
   console.log('  Rider:    rider@zembo.ug            / demo123');

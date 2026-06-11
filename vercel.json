@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://api.fleetspark.syncspherellc.com/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

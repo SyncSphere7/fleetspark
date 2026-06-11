@@ -717,3 +717,161 @@ model IncomeCertificate {
 
   @@map("income_certificates")
 }
+
+// ═══════════════════════════════════════════════════════════════
+//                    CHARGING INFRASTRUCTURE MODULE
+// ═══════════════════════════════════════════════════════════════
+
+model ChargingStation {
+  id              String       @id @default(uuid())
+  orgId           String       @map("org_id")  // Operator organization
+  name            String
+  type            ChargingStationType @default(PUBLIC)
+  lat             Float
+  lng             Float
+  address         String?
+  city            String       @default("Kampala")
+  region          String?      // "Central", "Western", "Eastern", "Northern"
+
+  // Power & capacity
+  totalChargers   Int          @default(1) @map("total_chargers")
+  availableChargers Int        @default(1) @map("available_chargers")
+  chargerType     ChargerType  @default(AC_LEVEL_2) @map("charger_type")
+  powerKw         Float?       @map("power_kw")
+
+  // Battery swap (for boda stations)
+  supportsSwap    Boolean      @default(false) @map("supports_swap")
+  totalSwapBatteries Int       @default(0) @map("total_swap_batteries")
+  availableSwapBatteries Int   @default(0) @map("available_swap_batteries")
+  batteryModel    String?      @map("battery_model")  // "Zembo BH5", "Spiro 2.5kWh", etc.
+
+  // Pricing
+  pricePerKwhUgx  Int?         @map("price_per_kwh_ugx")
+  swapPriceUgx    Int?         @map("swap_price_ugx")
+  paymentMethods  String[]     @default(["MOBILE_MONEY"]) // "MOBILE_MONEY", "CASH", "CARD"
+
+  // Power source
+  powerSource     PowerSource  @default(GRID) @map("power_source") // GRID, SOLAR, HYBRID
+
+  // Status
+  status          StationStatus @default(ACTIVE)
+  operatingHours  String?      @map("operating_hours") // "24/7", "6AM-10PM"
+
+  // Realtime
+  lastUpdated     DateTime     @default(now()) @map("last_updated")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  chargingSessions ChargingSession[]
+  batterySwaps    BatterySwap[]
+
+  @@index([orgId, status])
+  @@index([lat, lng])
+  @@index([city, status])
+  @@map("charging_stations")
+}
+
+enum ChargingStationType {
+  PUBLIC          // Open to all
+  PRIVATE         // Fleet-only
+  DEPOT           // Fleet depot
+  SWAP_ONLY       // Battery swap only (no plug-in charging)
+  FAST_DC         // DC fast charging
+}
+
+enum ChargerType {
+  AC_LEVEL_1      // Standard outlet (1.4kW)
+  AC_LEVEL_2      // Wall box (3.7-7kW)
+  DC_FAST         // DC fast charger (50kW+)
+  SWAP            // Battery swap only
+}
+
+enum PowerSource {
+  GRID
+  SOLAR
+  HYBRID          // Grid + solar
+  BATTERY         // Off-grid battery
+}
+
+enum StationStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  FULL            // All chargers in use
+}
+
+model ChargingSession {
+  id              String       @id @default(uuid())
+  stationId       String       @map("station_id")
+  vehicleId       String?      @map("vehicle_id")
+  userId          String?      @map("user_id")  // Who initiated
+
+  // Session details
+  chargerId       String?      @map("charger_id")  // Which specific charger
+  startTime       DateTime     @map("start_time")
+  endTime         DateTime?    @map("end_time")
+  durationMin     Int?         @map("duration_min")
+
+  // Energy & battery
+  startBatteryPct Int?         @map("start_battery_pct")
+  endBatteryPct   Int?         @map("end_battery_pct")
+  energyKwh       Float?       @map("energy_kwh")
+
+  // Payment
+  costUgx         Int?         @map("cost_ugx")
+  paymentMethod   PaymentMethod? @map("payment_method")
+  transactionId   String?      @map("transaction_id")
+  paymentStatus   PaymentStatus @default(PENDING)
+
+  // Status
+  status          ChargingSessionStatus @default(ACTIVE)
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  station         ChargingStation @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  vehicle         Vehicle?     @relation(fields: [vehicleId], references: [id])
+
+  @@index([stationId, status])
+  @@index([vehicleId, startTime(sort: Desc)])
+  @@map("charging_sessions")
+}
+
+enum ChargingSessionStatus {
+  ACTIVE          // Currently charging
+  COMPLETED       // Finished successfully
+  CANCELLED       // Cancelled by user
+  FAILED          // Error during charging
+}
+
+model BatterySwap {
+  id              String       @id @default(uuid())
+  stationId       String       @map("station_id")
+  vehicleId       String?      @map("vehicle_id")
+  riderId         String?      @map("rider_id")
+
+  // Swap details
+  oldBatteryId    String?      @map("old_battery_id")
+  newBatteryId    String?      @map("new_battery_id")
+  oldBatteryPct   Int?         @map("old_battery_pct")
+  newBatteryPct   Int?         @map("new_battery_pct")
+  batteryModel    String?      @map("battery_model")
+
+  // Payment
+  costUgx         Int?         @map("cost_ugx")
+  paymentMethod   PaymentMethod? @map("payment_method")
+  transactionId   String?      @map("transaction_id")
+  paymentStatus   PaymentStatus @default(PENDING)
+
+  // Timing
+  swapTime        DateTime     @default(now()) @map("swap_time")
+  durationSeconds Int?         @map("duration_seconds")  // How long the swap took
+
+  station         ChargingStation @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  vehicle         Vehicle?     @relation(fields: [vehicleId], references: [id])
+  rider           Driver?      @relation(fields: [riderId], references: [id])
+
+  @@index([stationId, swapTime(sort: Desc)])
+  @@index([riderId, swapTime(sort: Desc)])
+  @@map("battery_swaps")
+}
